@@ -1,0 +1,67 @@
+services:
+  postgresql:
+    image: postgres:latest
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres2024
+      POSTGRES_DB: quizdb
+    ports:
+      - "5432:5432"
+    networks:
+      - quizapp_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - quizapp_network
+    depends_on:
+      - postgresql
+
+  quiz-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: quizappdevops-quiz-app
+    container_name: quizappdevops-quiz-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/quizdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres2024
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgresql
+    networks:
+      - quizapp_network
+
+  sonarqube:
+    image: sonarqube:latest
+    container_name: quizappdevops-sonarqube
+    ports:
+      - "9000:9000"
+    networks:
+      - quizapp_network
+    environment:
+      - sonar.jdbc.url=jdbc:postgresql://postgresql:5432/quizdb
+      - sonar.jdbc.username=postgres
+      - sonar.jdbc.password=postgres2024
+    depends_on:
+      - postgresql
+
+networks:
+  quizapp_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
